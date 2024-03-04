@@ -14,7 +14,7 @@ import App from './App.tsx'
 import Navbar from './components/Navbar/index.tsx';
 import DataTable from './components/DataTable/index.tsx';
 
-import store from './app/store.js'
+import { store } from './app/store.ts'
 
 import './index.css'
 

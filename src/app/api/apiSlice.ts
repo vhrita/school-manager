@@ -1,17 +1,19 @@
 import { BaseQueryApi, FetchArgs, createApi, fetchBaseQuery } from '@reduxjs/toolkit/query'
 import { setCredentials, logOut } from '../../features/auth/authSlice'
+import { RootState } from '../store'
 
 const baseQuery = fetchBaseQuery({
     baseUrl: 'http://localhost:8000',
     credentials: 'include',
-    prepareHeaders: (headers, { getState }) => {
-        const token = getState().auth.token
-        if(token) {
-            headers.set("Authorization", `${token}`)
+    prepareHeaders: (headers: Headers, api: Pick<BaseQueryApi, "getState" | "extra" | "endpoint" | "type" | "forced">) => {
+        const authState = (api.getState() as RootState).auth;
+        const token = authState && authState.user && (authState.user as { token?: string }).token;
+        if (token) {
+            headers.set("Authorization", `${token}`);
         }
-        return headers
+        return headers;
     }
-})
+});
 
 const baseQueryWithReauth = async (args: string | FetchArgs, api: BaseQueryApi, extraOptions: object) => {
     let result = await baseQuery(args, api, extraOptions)
@@ -20,11 +22,11 @@ const baseQueryWithReauth = async (args: string | FetchArgs, api: BaseQueryApi, 
         console.log('sending refresh token')
         const refreshResult = await baseQuery('/refresh', api, extraOptions)
         if(refreshResult?.data) {
-            const user = api.getState.auth.user
+            const user = (api.getState() as RootState).auth.user
             api.dispatch(setCredentials({ ...refreshResult.data, user }))
             result = await baseQuery(args, api, extraOptions)
         } else {
-            api.dispatch(logOut())
+            api.dispatch(logOut({}))
         }
     }
 
